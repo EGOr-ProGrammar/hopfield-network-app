@@ -1,3 +1,15 @@
 <resources>
-    <string name="app_name">Hopfield</string>
+    <string name="app_name">Hopfield Network</string>
+    <string name="title">Hopfield Network</string>
+    <string name="grid_size_format">Grid Size: %1$dx%1$d</string>
+    <string name="patterns_learned_format">Patterns Learned: %1$d</string>
+    <string name="pattern_recognized">Pattern Recognized!</string>
+    <string name="btn_learn">Learn Pattern</string>
+    <string name="btn_recognize">Recognize</string>
+    <string name="btn_clear_grid">Clear Grid</string>
+    <string name="btn_reset_memory">Reset Memory</string>
+    <string name="change_size">Change Size</string>
+    <string name="btn_view_patterns">View Patterns</string>
+    <string name="patterns_dialog_title">Saved Patterns</string>
+    <string name="btn_close">Close</string>
 </resources>

@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Сеть Хопфилда</string>
+    <string name="title">Сеть Хопфилда</string>
+    <string name="grid_size_format">Размер сетки: %1$dx%1$d</string>
+    <string name="patterns_learned_format">Образов в памяти: %1$d</string>
+    <string name="pattern_recognized">Образ распознан!</string>
+    <string name="btn_learn">Запомнить</string>
+    <string name="btn_recognize">Распознать</string>
+    <string name="btn_clear_grid">Очистить поле</string>
+    <string name="btn_reset_memory">Сбросить память</string>
+    <string name="change_size">Изменить размер</string>
+    <string name="btn_view_patterns">Просмотр образов</string>
+    <string name="patterns_dialog_title">Сохраненные образы</string>
+    <string name="btn_close">Закрыть</string>
+</resources>
