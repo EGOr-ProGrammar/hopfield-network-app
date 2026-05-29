@@ -20,19 +20,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val state: StateFlow<MainUiState> = _state.asStateFlow()
 
     private var hopfieldNetwork: HopfieldNetwork =
-        HopfieldNetwork(NetworkConfig.DEFAULT_GRID_SIZE * NetworkConfig.DEFAULT_GRID_SIZE)
+        HopfieldNetwork(NetworkConfig.DEFAULT_ROWS * NetworkConfig.DEFAULT_COLS)
 
     init {
         viewModelScope.launch {
-            val (savedSize, savedPatterns) = repository.patternsFlow.first()
+            val (savedRows, savedCols, savedPatterns) = repository.patternsFlow.first()
 
-            hopfieldNetwork = HopfieldNetwork(savedSize * savedSize)
+            hopfieldNetwork = HopfieldNetwork(savedRows * savedCols)
             savedPatterns.forEach { hopfieldNetwork.learn(it.toIntArray()) }
 
             _state.update {
                 it.copy(
-                    gridSize = savedSize,
-                    gridState = List(savedSize * savedSize) { NetworkConfig.STATE_INACTIVE },
+                    gridRows = savedRows,
+                    gridCols = savedCols,
+                    gridState = List(savedRows * savedCols) { NetworkConfig.STATE_INACTIVE },
                     learnedCount = savedPatterns.size,
                     learnedPatterns = savedPatterns
                 )
@@ -48,8 +49,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             MainIntent.RecognizePattern -> recognizePattern()
             MainIntent.ClearGrid -> clearGrid()
             MainIntent.ResetMemory -> resetMemory()
-            is MainIntent.ChangeGridSize -> changeGridSize(intent.newSize)
+            is MainIntent.ChangeGridSize -> changeGridSize(intent.rows, intent.cols)
             is MainIntent.ShowPatternsSheet -> showPatternsSheet(intent.show)
+            is MainIntent.ShowSettingsSheet -> showSettingsSheet(intent.show)
         }
     }
 
@@ -85,7 +87,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val updatedPatterns = _state.value.learnedPatterns + listOf(pattern)
 
         viewModelScope.launch {
-            repository.saveState(_state.value.gridSize, updatedPatterns)
+            repository.saveState(_state.value.gridRows, _state.value.gridCols, updatedPatterns)
         }
 
         _state.update {
@@ -112,7 +114,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun clearGrid() {
         _state.update { currentState ->
             currentState.copy(
-                gridState = List(currentState.gridSize * currentState.gridSize) { NetworkConfig.STATE_INACTIVE },
+                gridState = List(currentState.gridRows * currentState.gridCols) { NetworkConfig.STATE_INACTIVE },
                 isRecognized = false
             )
         }
@@ -132,25 +134,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun changeGridSize(newSize: Int) {
-        if (newSize < NetworkConfig.MIN_GRID_SIZE || newSize > NetworkConfig.MAX_GRID_SIZE) return
-        val totalSize = newSize * newSize
+    private fun changeGridSize(rows: Int, cols: Int) {
+        if (rows < NetworkConfig.MIN_ROWS || rows > NetworkConfig.MAX_ROWS ||
+            cols < NetworkConfig.MIN_COLS || cols > NetworkConfig.MAX_COLS
+        ) return
+
+        val totalSize = rows * cols
         hopfieldNetwork = HopfieldNetwork(totalSize)
         viewModelScope.launch {
-            repository.saveState(newSize, emptyList())
+            repository.saveState(rows, cols, emptyList())
         }
         _state.update {
             it.copy(
-                gridSize = newSize,
+                gridRows = rows,
+                gridCols = cols,
                 gridState = List(totalSize) { NetworkConfig.STATE_INACTIVE },
                 learnedCount = 0,
                 learnedPatterns = emptyList(),
-                isRecognized = false
+                isRecognized = false,
+                showSettingsSheet = false
             )
         }
     }
 
     private fun showPatternsSheet(show: Boolean) {
         _state.update { it.copy(showPatternsSheet = show) }
+    }
+
+    private fun showSettingsSheet(show: Boolean) {
+        _state.update { it.copy(showSettingsSheet = show) }
     }
 }

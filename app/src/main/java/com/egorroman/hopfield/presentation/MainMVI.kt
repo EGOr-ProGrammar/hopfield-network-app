@@ -5,12 +5,14 @@ import com.egorroman.hopfield.domain.NetworkConfig
 
 @Immutable
 data class MainUiState(
-    val gridSize: Int = NetworkConfig.DEFAULT_GRID_SIZE,
-    val gridState: List<Int> = List(NetworkConfig.DEFAULT_GRID_SIZE * NetworkConfig.DEFAULT_GRID_SIZE) { NetworkConfig.STATE_INACTIVE },
+    val gridRows: Int = NetworkConfig.DEFAULT_ROWS,
+    val gridCols: Int = NetworkConfig.DEFAULT_COLS,
+    val gridState: List<Int> = List(NetworkConfig.DEFAULT_ROWS * NetworkConfig.DEFAULT_COLS) { NetworkConfig.STATE_INACTIVE },
     val learnedCount: Int = 0,
     val isRecognized: Boolean = false,
     val learnedPatterns: List<List<Int>> = emptyList(),
-    val showPatternsSheet: Boolean = false
+    val showPatternsSheet: Boolean = false,
+    val showSettingsSheet: Boolean = false
 )
 
 sealed class MainIntent {
@@ -20,6 +22,7 @@ sealed class MainIntent {
     object RecognizePattern : MainIntent()
     object ClearGrid : MainIntent()
     object ResetMemory : MainIntent()
-    data class ChangeGridSize(val newSize: Int) : MainIntent()
+    data class ChangeGridSize(val rows: Int, val cols: Int) : MainIntent()
     data class ShowPatternsSheet(val show: Boolean) : MainIntent()
+    data class ShowSettingsSheet(val show: Boolean) : MainIntent()
 }

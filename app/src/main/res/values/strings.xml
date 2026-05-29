@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Hopfield Network</string>
     <string name="title">Hopfield Network</string>
-    <string name="grid_size_format">Grid Size: %1$dx%1$d</string>
+    <string name="grid_size_format">Grid Size: %1$dx%2$d</string>
     <string name="patterns_learned_format">Patterns Learned: %1$d</string>
     <string name="pattern_recognized">Pattern Recognized!</string>
     <string name="btn_learn">Learn Pattern</string>
@@ -12,4 +12,10 @@
     <string name="btn_view_patterns">View Patterns</string>
     <string name="patterns_dialog_title">Saved Patterns</string>
     <string name="btn_close">Close</string>
+    <string name="settings_title">Grid Settings</string>
+    <string name="rows_label">Rows: %1$d</string>
+    <string name="cols_label">Columns: %1$d</string>
+    <string name="apply_changes">Apply &amp; Clear Memory</string>
+    <string name="warning_clear_memory">Note: Changing dimensions will clear all learned patterns.</string>
+    <string name="btn_settings">Settings</string>
 </resources>
