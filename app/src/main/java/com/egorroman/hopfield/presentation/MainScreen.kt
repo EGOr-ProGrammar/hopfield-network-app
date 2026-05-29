@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,26 +20,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
+import androidx.compose.material.icons.filled.Grid4x4
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -50,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
@@ -81,8 +78,9 @@ import com.egorroman.hopfield.domain.NetworkConfig
 @Composable
 fun MainScreen(viewModel: MainViewModel = viewModel()) {
     val state by viewModel.state.collectAsState()
-    var gridSizePx by remember { mutableStateOf(IntSize.Zero) }
+    var gridContentSizePx by remember { mutableStateOf(IntSize.Zero) }
     val sheetState = rememberModalBottomSheetState()
+    val settingsSheetState = rememberModalBottomSheetState()
 
     Scaffold(
         topBar = {
@@ -94,6 +92,12 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     )
                 },
                 actions = {
+                    IconButton(onClick = { viewModel.onIntent(MainIntent.ShowSettingsSheet(true)) }) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.btn_settings)
+                        )
+                    }
                     if (state.gridState.any { it == NetworkConfig.STATE_ACTIVE }) {
                         IconButton(onClick = { viewModel.onIntent(MainIntent.ClearGrid) }) {
                             Icon(
@@ -105,11 +109,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     }
                     if (state.learnedCount > 0) {
                         IconButton(onClick = {
-                            viewModel.onIntent(
-                                MainIntent.ShowPatternsSheet(
-                                    true
-                                )
-                            )
+                            viewModel.onIntent(MainIntent.ShowPatternsSheet(true))
                         }) {
                             Icon(
                                 Icons.Default.History,
@@ -127,7 +127,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 )
             )
         },
-        contentWindowInsets = WindowInsets.ime.union(WindowInsets.systemBars)
+        contentWindowInsets = WindowInsets(0.dp)
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -144,17 +144,21 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 ),
                 shape = RoundedCornerShape(24.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .padding(20.dp)
                         .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceAround,
                 ) {
-//                    StatusItem(
-//                        label = stringResource(R.string.grid_size_format, state.gridSize),
-//                        icon = Icons.Default.Grid4x4
-//                    )
+                    StatusItem(
+                        label = stringResource(
+                            R.string.grid_size_format,
+                            state.gridRows,
+                            state.gridCols
+                        ),
+                        icon = Icons.Default.Grid4x4
+                    )
                     StatusItem(
                         label = stringResource(
                             R.string.patterns_learned_format,
@@ -167,91 +171,128 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Box(
+            // Grid Container with BoxWithConstraints for optimal fitting
+            BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                    .onGloballyPositioned { layoutCoordinates ->
-                        gridSizePx = layoutCoordinates.size
-                    }
-                    .pointerInput(state.gridSize) {
-                        var initialActivate = true
-                        val touchedIndices = mutableSetOf<Int>()
+                    .fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                val gridAspectRatio = state.gridCols.toFloat() / state.gridRows
+                val containerAspectRatio = maxWidth / maxHeight
 
-                        detectDragGestures(
-                            onDragStart = { offset ->
-                                touchedIndices.clear()
-                                val index = getCellIndex(offset, gridSizePx, state.gridSize)
+                val (gridWidth, gridHeight) = if (gridAspectRatio > containerAspectRatio) {
+                    maxWidth to (maxWidth / gridAspectRatio)
+                } else {
+                    (maxHeight * gridAspectRatio) to maxHeight
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(gridWidth, gridHeight)
+                        .clip(RoundedCornerShape(28.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                        .padding(12.dp)
+                        .onGloballyPositioned { gridContentSizePx = it.size }
+                        .pointerInput(state.gridRows, state.gridCols) {
+                            var initialActivate = true
+                            val touchedIndices = mutableSetOf<Int>()
+
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    touchedIndices.clear()
+                                    val index = getCellIndex(
+                                        offset,
+                                        gridContentSizePx,
+                                        state.gridRows,
+                                        state.gridCols
+                                    )
+                                    if (index != -1) {
+                                        initialActivate =
+                                            state.gridState[index] != NetworkConfig.STATE_ACTIVE
+                                        touchedIndices.add(index)
+                                        viewModel.onIntent(
+                                            MainIntent.ToggleCells(
+                                                setOf(index),
+                                                initialActivate
+                                            )
+                                        )
+                                    }
+                                },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    val index =
+                                        getCellIndex(
+                                            change.position,
+                                            gridContentSizePx,
+                                            state.gridRows,
+                                            state.gridCols
+                                        )
+                                    if (index != -1 && index !in touchedIndices) {
+                                        touchedIndices.add(index)
+                                        viewModel.onIntent(
+                                            MainIntent.ToggleCells(
+                                                setOf(index),
+                                                initialActivate
+                                            )
+                                        )
+                                    }
+                                },
+                                onDragEnd = {
+                                    touchedIndices.clear()
+                                },
+                                onDragCancel = {
+                                    touchedIndices.clear()
+                                }
+                            )
+                        }
+                        .pointerInput(state.gridRows, state.gridCols) {
+                            detectTapGestures { offset ->
+                                val index = getCellIndex(
+                                    offset,
+                                    gridContentSizePx,
+                                    state.gridRows,
+                                    state.gridCols
+                                )
                                 if (index != -1) {
-                                    initialActivate =
-                                        state.gridState[index] != NetworkConfig.STATE_ACTIVE
-                                    touchedIndices.add(index)
-                                    viewModel.onIntent(
-                                        MainIntent.ToggleCells(
-                                            setOf(index),
-                                            initialActivate
-                                        )
-                                    )
+                                    viewModel.onIntent(MainIntent.ToggleCell(index))
                                 }
-                            },
-                            onDrag = { change, _ ->
-                                change.consume()
-                                val index =
-                                    getCellIndex(change.position, gridSizePx, state.gridSize)
-                                if (index != -1 && index !in touchedIndices) {
-                                    touchedIndices.add(index)
-                                    viewModel.onIntent(
-                                        MainIntent.ToggleCells(
-                                            setOf(index),
-                                            initialActivate
-                                        )
-                                    )
-                                }
-                            },
-                            onDragEnd = {
-                                touchedIndices.clear()
-                            },
-                            onDragCancel = {
-                                touchedIndices.clear()
-                            }
-                        )
-                    }
-                    .pointerInput(state.gridSize) {
-                        detectTapGestures { offset ->
-                            val index = getCellIndex(offset, gridSizePx, state.gridSize)
-                            if (index != -1) {
-                                viewModel.onIntent(MainIntent.ToggleCell(index))
                             }
                         }
-                    }
-                    .padding(12.dp)
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(state.gridSize),
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    userScrollEnabled = false
                 ) {
-                    items(state.gridState) { cellState ->
-                        val color by animateColorAsState(
-                            targetValue = if (cellState == NetworkConfig.STATE_ACTIVE)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant,
-                            animationSpec = spring(stiffness = Spring.StiffnessLow),
-                            label = "CellColor"
-                        )
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        for (r in 0 until state.gridRows) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                for (c in 0 until state.gridCols) {
+                                    val index = r * state.gridCols + c
+                                    val cellState =
+                                        state.gridState.getOrElse(index) { NetworkConfig.STATE_INACTIVE }
 
-                        Box(
-                            modifier = Modifier
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(color)
-                        )
+                                    val color by animateColorAsState(
+                                        targetValue = if (cellState == NetworkConfig.STATE_ACTIVE)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                        animationSpec = spring(stiffness = Spring.StiffnessLow),
+                                        label = "CellColor"
+                                    )
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxHeight()
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(color)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -331,10 +372,11 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                             Box(
                                 modifier = Modifier
                                     .padding(16.dp)
-                                    .size(120.dp)
+                                    .height(120.dp)
+                                    .aspectRatio(state.gridCols.toFloat() / state.gridRows)
                                     .align(Alignment.CenterHorizontally)
                             ) {
-                                MiniGrid(pattern, state.gridSize)
+                                MiniGrid(pattern, state.gridRows, state.gridCols)
                             }
                         }
                     }
@@ -354,25 +396,118 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
             }
         }
     }
+
+    // Modal Bottom Sheet for Settings
+    if (state.showSettingsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.onIntent(MainIntent.ShowSettingsSheet(false)) },
+            sheetState = settingsSheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp
+        ) {
+            SettingsSheetContent(
+                currentRows = state.gridRows,
+                currentCols = state.gridCols,
+                onApply = { rows, cols ->
+                    viewModel.onIntent(MainIntent.ChangeGridSize(rows, cols))
+                }
+            )
+        }
+    }
 }
 
 @Composable
-fun MiniGrid(pattern: List<Int>, gridSize: Int) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        for (row in 0 until gridSize) {
-            Row(modifier = Modifier.weight(1f)) {
-                for (col in 0 until gridSize) {
-                    val index = row * gridSize + col
+fun SettingsSheetContent(
+    currentRows: Int,
+    currentCols: Int,
+    onApply: (Int, Int) -> Unit
+) {
+    var rows by remember { mutableStateOf(currentRows.toFloat()) }
+    var cols by remember { mutableStateOf(currentCols.toFloat()) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.settings_title),
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = stringResource(R.string.rows_label, rows.toInt()),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Slider(
+            value = rows,
+            onValueChange = { rows = it },
+            valueRange = NetworkConfig.MIN_ROWS.toFloat()..NetworkConfig.MAX_ROWS.toFloat(),
+            steps = if (NetworkConfig.MAX_ROWS > NetworkConfig.MIN_ROWS) NetworkConfig.MAX_ROWS - NetworkConfig.MIN_ROWS - 1 else 0
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.cols_label, cols.toInt()),
+            style = MaterialTheme.typography.titleMedium
+        )
+        Slider(
+            value = cols,
+            onValueChange = { cols = it },
+            valueRange = NetworkConfig.MIN_COLS.toFloat()..NetworkConfig.MAX_COLS.toFloat(),
+            steps = if (NetworkConfig.MAX_COLS > NetworkConfig.MIN_COLS) NetworkConfig.MAX_COLS - NetworkConfig.MIN_COLS - 1 else 0
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = stringResource(R.string.warning_clear_memory),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = { onApply(rows.toInt(), cols.toInt()) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Text(stringResource(R.string.apply_changes))
+        }
+    }
+}
+
+@Composable
+fun MiniGrid(pattern: List<Int>, gridRows: Int, gridCols: Int) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ) {
+        for (row in 0 until gridRows) {
+            Row(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                for (col in 0 until gridCols) {
+                    val index = row * gridCols + col
                     val isActive =
                         if (index in pattern.indices) pattern[index] == NetworkConfig.STATE_ACTIVE else false
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
-                            .padding(1.dp)
                             .background(
                                 color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(2.dp)
+                                shape = RoundedCornerShape(1.dp)
                             )
                     )
                 }
@@ -381,17 +516,17 @@ fun MiniGrid(pattern: List<Int>, gridSize: Int) {
     }
 }
 
-private fun getCellIndex(offset: Offset, gridSizePx: IntSize, gridSize: Int): Int {
+private fun getCellIndex(offset: Offset, gridSizePx: IntSize, gridRows: Int, gridCols: Int): Int {
     if (gridSizePx.width <= 0 || gridSizePx.height <= 0) return -1
 
-    val cellWidth = gridSizePx.width.toFloat() / gridSize
-    val cellHeight = gridSizePx.height.toFloat() / gridSize
+    val cellWidth = gridSizePx.width.toFloat() / gridCols
+    val cellHeight = gridSizePx.height.toFloat() / gridRows
 
     val column = (offset.x / cellWidth).toInt()
     val row = (offset.y / cellHeight).toInt()
 
-    if (column in 0 until gridSize && row in 0 until gridSize) {
-        return row * gridSize + column
+    if (column in 0 until gridCols && row in 0 until gridRows) {
+        return row * gridCols + column
     }
     return -1
 }
