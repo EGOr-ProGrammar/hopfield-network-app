@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -94,7 +95,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 },
                 actions = {
                     if (state.gridState.any { it == NetworkConfig.STATE_ACTIVE }) {
-                        IconButton(onClick = { viewModel.handleIntent(MainIntent.ClearGrid) }) {
+                        IconButton(onClick = { viewModel.onIntent(MainIntent.ClearGrid) }) {
                             Icon(
                                 Icons.Default.Clear,
                                 contentDescription = stringResource(R.string.btn_clear_grid),
@@ -104,7 +105,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     }
                     if (state.learnedCount > 0) {
                         IconButton(onClick = {
-                            viewModel.handleIntent(
+                            viewModel.onIntent(
                                 MainIntent.ShowPatternsSheet(
                                     true
                                 )
@@ -186,9 +187,9 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                 val index = getCellIndex(offset, gridSizePx, state.gridSize)
                                 if (index != -1) {
                                     initialActivate =
-                                        viewModel.state.value.gridState[index] != NetworkConfig.STATE_ACTIVE
+                                        state.gridState[index] != NetworkConfig.STATE_ACTIVE
                                     touchedIndices.add(index)
-                                    viewModel.handleIntent(
+                                    viewModel.onIntent(
                                         MainIntent.ToggleCells(
                                             setOf(index),
                                             initialActivate
@@ -202,7 +203,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                     getCellIndex(change.position, gridSizePx, state.gridSize)
                                 if (index != -1 && index !in touchedIndices) {
                                     touchedIndices.add(index)
-                                    viewModel.handleIntent(
+                                    viewModel.onIntent(
                                         MainIntent.ToggleCells(
                                             setOf(index),
                                             initialActivate
@@ -222,7 +223,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                         detectTapGestures { offset ->
                             val index = getCellIndex(offset, gridSizePx, state.gridSize)
                             if (index != -1) {
-                                viewModel.handleIntent(MainIntent.ToggleCell(index))
+                                viewModel.onIntent(MainIntent.ToggleCell(index))
                             }
                         }
                     }
@@ -235,9 +236,9 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     userScrollEnabled = false
                 ) {
-                    itemsIndexed(state.gridState) { _, value ->
+                    items(state.gridState) { cellState ->
                         val color by animateColorAsState(
-                            targetValue = if (value == NetworkConfig.STATE_ACTIVE)
+                            targetValue = if (cellState == NetworkConfig.STATE_ACTIVE)
                                 MaterialTheme.colorScheme.primary
                             else
                                 MaterialTheme.colorScheme.surfaceVariant,
@@ -274,14 +275,14 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 ActionTile(
                     text = stringResource(R.string.btn_learn),
                     icon = Icons.Default.Save,
-                    onClick = { viewModel.handleIntent(MainIntent.LearnPattern) },
+                    onClick = { viewModel.onIntent(MainIntent.LearnPattern) },
                     modifier = Modifier.weight(1f),
                     containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
                 ActionTile(
                     text = stringResource(R.string.btn_recognize),
                     icon = Icons.Default.AutoMode,
-                    onClick = { viewModel.handleIntent(MainIntent.RecognizePattern) },
+                    onClick = { viewModel.onIntent(MainIntent.RecognizePattern) },
                     modifier = Modifier.weight(1f),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer
                 )
@@ -292,7 +293,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
     // Modal Bottom Sheet for Viewing Patterns
     if (state.showPatternsSheet) {
         ModalBottomSheet(
-            onDismissRequest = { viewModel.handleIntent(MainIntent.ShowPatternsSheet(false)) },
+            onDismissRequest = { viewModel.onIntent(MainIntent.ShowPatternsSheet(false)) },
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp
@@ -342,7 +343,7 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { viewModel.handleIntent(MainIntent.ResetMemory) },
+                    onClick = { viewModel.onIntent(MainIntent.ResetMemory) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {

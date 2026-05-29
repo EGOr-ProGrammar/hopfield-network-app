@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 import com.egorroman.hopfield.domain.NetworkConfig
 
 @Immutable
-data class MainState(
+data class MainUiState(
     val gridSize: Int = NetworkConfig.DEFAULT_GRID_SIZE,
     val gridState: List<Int> = List(NetworkConfig.DEFAULT_GRID_SIZE * NetworkConfig.DEFAULT_GRID_SIZE) { NetworkConfig.STATE_INACTIVE },
     val learnedCount: Int = 0,

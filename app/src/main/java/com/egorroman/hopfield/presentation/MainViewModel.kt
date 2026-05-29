@@ -16,8 +16,8 @@ import kotlinx.coroutines.launch
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = PatternRepository(application)
 
-    private val _state = MutableStateFlow(MainState())
-    val state: StateFlow<MainState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(MainUiState())
+    val state: StateFlow<MainUiState> = _state.asStateFlow()
 
     private var hopfieldNetwork: HopfieldNetwork =
         HopfieldNetwork(NetworkConfig.DEFAULT_GRID_SIZE * NetworkConfig.DEFAULT_GRID_SIZE)
@@ -40,7 +40,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun handleIntent(intent: MainIntent) {
+    fun onIntent(intent: MainIntent) {
         when (intent) {
             is MainIntent.ToggleCell -> toggleCell(intent.index)
             is MainIntent.ToggleCells -> toggleCells(intent.indices, intent.activate)
