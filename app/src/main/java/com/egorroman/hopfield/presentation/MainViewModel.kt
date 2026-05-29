@@ -3,9 +3,9 @@ package com.egorroman.hopfield.presentation
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.egorroman.hopfield.config.NetworkConfig
 import com.egorroman.hopfield.data.PatternRepository
 import com.egorroman.hopfield.domain.HopfieldNetwork
+import com.egorroman.hopfield.domain.NetworkConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

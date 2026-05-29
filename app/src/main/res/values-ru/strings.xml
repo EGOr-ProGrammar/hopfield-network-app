@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Сеть Хопфилда</string>
+    <string name="app_name">Hopfield Network</string>
     <string name="title">Сеть Хопфилда</string>
     <string name="grid_size_format">Размер сетки: %1$dx%1$d</string>
     <string name="patterns_learned_format">Образов в памяти: %1$d</string>

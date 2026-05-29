@@ -1,4 +1,4 @@
-package com.egorroman.hopfield.ui.theme
+package com.egorroman.hopfield.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

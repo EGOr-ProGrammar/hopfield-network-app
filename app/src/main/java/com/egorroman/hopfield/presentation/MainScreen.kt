@@ -1,10 +1,10 @@
-package com.egorroman.hopfield.ui.screen
+package com.egorroman.hopfield.presentation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,7 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoMode
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DeleteForever
-import androidx.compose.material.icons.filled.Grid4x4
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Save
@@ -75,9 +74,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.egorroman.hopfield.R
-import com.egorroman.hopfield.config.NetworkConfig
-import com.egorroman.hopfield.presentation.MainIntent
-import com.egorroman.hopfield.presentation.MainViewModel
+import com.egorroman.hopfield.domain.NetworkConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,17 +176,17 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                     .onGloballyPositioned { layoutCoordinates ->
                         gridSizePx = layoutCoordinates.size
                     }
-                    .pointerInput(state.gridSize, state.gridState) {
+                    .pointerInput(state.gridSize) {
                         var initialActivate = true
                         val touchedIndices = mutableSetOf<Int>()
 
-                        detectDragGesturesAfterLongPress(
+                        detectDragGestures(
                             onDragStart = { offset ->
                                 touchedIndices.clear()
                                 val index = getCellIndex(offset, gridSizePx, state.gridSize)
                                 if (index != -1) {
                                     initialActivate =
-                                        state.gridState[index] != NetworkConfig.STATE_ACTIVE
+                                        viewModel.state.value.gridState[index] != NetworkConfig.STATE_ACTIVE
                                     touchedIndices.add(index)
                                     viewModel.handleIntent(
                                         MainIntent.ToggleCells(
@@ -212,6 +209,12 @@ fun MainScreen(viewModel: MainViewModel = viewModel()) {
                                         )
                                     )
                                 }
+                            },
+                            onDragEnd = {
+                                touchedIndices.clear()
+                            },
+                            onDragCancel = {
+                                touchedIndices.clear()
                             }
                         )
                     }

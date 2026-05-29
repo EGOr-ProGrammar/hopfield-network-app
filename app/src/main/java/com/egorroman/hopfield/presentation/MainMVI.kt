@@ -1,7 +1,7 @@
 package com.egorroman.hopfield.presentation
 
 import androidx.compose.runtime.Immutable
-import com.egorroman.hopfield.config.NetworkConfig
+import com.egorroman.hopfield.domain.NetworkConfig
 
 @Immutable
 data class MainState(

@@ -1,6 +1,6 @@
 package com.egorroman.hopfield.domain
 
-import com.egorroman.hopfield.config.NetworkConfig
+import com.egorroman.hopfield.domain.NetworkConfig
 
 class HopfieldNetwork(private val size: Int = NetworkConfig.DEFAULT_GRID_SIZE * NetworkConfig.DEFAULT_GRID_SIZE) {
     private var weightMatrix = Array(size) { IntArray(size) }
